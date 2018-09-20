@@ -85,3 +85,28 @@ class EthBlockMapper(object):
             'timestamp': block.timestamp,
             'transaction_count': block.transaction_count,
         }
+
+    def blocks_to_dict(self, blocks):
+        """Elements `difficulty` and `total_difficulty` are type cast to string,
+        which is required for `ParquetItemExporter.export_item()` method."""
+        return {
+            'type': 'block',
+            'number': [block.number for block in blocks],
+            'hash': [block.hash for block in blocks],
+            'parent_hash': [block.parent_hash for block in blocks],
+            'nonce': [block.nonce for block in blocks],
+            'sha3_uncles': [block.sha3_uncles for block in blocks],
+            'logs_bloom': [block.logs_bloom for block in blocks],
+            'transactions_root': [block.transactions_root for block in blocks],
+            'state_root': [block.state_root for block in blocks],
+            'receipts_root': [block.receipts_root for block in blocks],
+            'miner': [block.miner for block in blocks],
+            'difficulty': [str(block.difficulty) for block in blocks],
+            'total_difficulty': [str(block.total_difficulty) for block in blocks],
+            'size': [block.size for block in blocks],
+            'extra_data': [block.extra_data for block in blocks],
+            'gas_limit': [block.gas_limit for block in blocks],
+            'gas_used': [block.gas_used for block in blocks],
+            'timestamp': [block.timestamp for block in blocks],
+            'transaction_count': [block.transaction_count for block in blocks]
+        }

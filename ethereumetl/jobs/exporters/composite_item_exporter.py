@@ -22,7 +22,7 @@
 import logging
 
 from ethereumetl.atomic_counter import AtomicCounter
-from ethereumetl.exporters import CsvItemExporter, JsonLinesItemExporter
+from ethereumetl.exporters import CsvItemExporter, JsonLinesItemExporter, ParquetItemExporter
 from ethereumetl.file_utils import get_file_handle, close_silently
 
 
@@ -44,6 +44,8 @@ class CompositeItemExporter:
             self.file_mapping[item_type] = file
             if str(filename).endswith('.json'):
                 item_exporter = JsonLinesItemExporter(file, fields_to_export=fields)
+            elif str(filename).endswith('.parquet'):
+                item_exporter = ParquetItemExporter(file, fields_to_export=fields)
             else:
                 item_exporter = CsvItemExporter(file, fields_to_export=fields)
             self.exporter_mapping[item_type] = item_exporter

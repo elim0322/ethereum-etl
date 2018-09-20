@@ -34,7 +34,8 @@ import csv
 import io
 import threading
 from json import JSONEncoder
-
+import pyarrow as pa
+import pyarrow.parquet as pq
 import six
 
 
@@ -170,6 +171,50 @@ class JsonLinesItemExporter(BaseItemExporter):
         itemdict = dict(self._get_serialized_fields(item))
         data = self.encoder.encode(itemdict) + '\n'
         self.file.write(to_bytes(data, self.encoding))
+
+
+class ParquetItemExporter(BaseItemExporter):
+
+    def __init__(self, file, **kwargs):
+        self._configure(kwargs, dont_fail=True)
+        self.file = file
+        self.compression = "gzip"
+
+    def export_item(self, item):
+        # create Arrow arrays (from list)
+        number = pa.array(item['number'], type="int64")
+        hash = pa.array(item['hash'], type="str")
+        parent_hash = pa.array(item['parent_hash'], type="str")
+        nonce = pa.array(item['nonce'], type="str")
+        sha3_uncles = pa.array(item['sha3_uncles'], type="str")
+        logs_bloom = pa.array(item['logs_bloom'], type="str")
+        transactions_root = pa.array(item['transactions_root'],type="str")
+        state_root = pa.array(item['state_root'], type="str")
+        receipts_root = pa.array(item['receipts_root'], type="str")
+        miner = pa.array(item['miner'], type="str")
+        difficulty = pa.array(item['difficulty'], type="str")
+        total_difficulty = pa.array(item['total_difficulty'], type="str")
+        size = pa.array(item['size'], type="int32")
+        extra_data = pa.array(item['extra_data'], type="str")
+        gas_limit = pa.array(item['gas_limit'], type="int64")
+        gas_used = pa.array(item['gas_used'], type="int64")
+        timestamp = pa.array(item['timestamp'], type="int64")
+        transaction_count = pa.array(item['transaction_count'], type="int16")
+
+        # create Arrow table object (from the above arrays)
+        table = pa.Table.from_arrays(
+            arrays = [number,hash,parent_hash,nonce,sha3_uncles,logs_bloom,
+                      transactions_root,state_root,receipts_root,miner,
+                      difficulty,total_difficulty,size,extra_data,gas_limit,
+                      gas_used,timestamp,transaction_count],
+            names = ['number','hash','parent_hash','nonce','sha3_uncles',
+                     'logs_bloom','transactions_root','state_root','receipts_root',
+                     'miner','difficulty','total_difficulty','size','extra_data',
+                     'gas_limit','gas_used','timestamp','transaction_count']
+        )
+
+        # write table as parquet
+        pq.write_table(table=table, where=self.file, compression=self.compression)
 
 
 def to_native_str(text, encoding=None, errors='strict'):

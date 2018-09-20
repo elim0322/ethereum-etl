@@ -60,6 +60,12 @@ class ExportBlocksJob(BaseJob):
         self.block_mapper = EthBlockMapper()
         self.transaction_mapper = EthTransactionMapper()
 
+        ext = self.item_exporter.filename_mapping.values()
+        if any(".parquet" in each for each in ext if each is not None):
+            self.orientation = "column"
+        else:
+            self.orientation = "row"
+
     def _start(self):
         self.item_exporter.open()
 
@@ -76,103 +82,23 @@ class ExportBlocksJob(BaseJob):
         results = rpc_response_batch_to_results(response)
         blocks = [self.block_mapper.json_dict_to_block(result) for result in results]
 
-        for block in blocks:
-            self._export_block(block)
+        self._export_blocks(blocks)
 
-    def _export_block(self, block):
+    def _export_blocks(self, blocks):
         if self.export_blocks:
-            self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
+            if (self.orientation == "row"):
+                for block in blocks:
+                    self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
+            elif (self.orientation == "column"):
+                self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks))
+
         if self.export_transactions:
-            for tx in block.transactions:
-                self.item_exporter.export_item(self.transaction_mapper.transaction_to_dict(tx))
-
-    def _export_as_parquet(self, block):
-        """This method exports blocks as column-oriented Parquet format, as
-        opposed to the row-oriented csv format. In doing so, the attributes of
-        each block object saved in memory as lists, which then make up pyarrow
-        Table objects.
-        """
-
-        # initialize list containers
-        number            = []
-        hash              = []
-        parent_hash       = []
-        nonce             = []
-        sha3_uncles       = []
-        logs_bloom        = []
-        transactions_root = []
-        state_root        = []
-        receipts_root     = []
-        miner             = []
-        difficulty        = []
-        total_difficulty  = []
-        size              = []
-        extra_data        = []
-        gas_limit         = []
-        gas_used          = []
-        timestamp         = []
-        transaction_count = []
-
-        # unpack block object & append to the containers
-        for each in block:
-            number.append(each.number)
-            hash.append(each.hash)
-            parent_hash.append(each.parent_hash)
-            nonce.append(each.nonce)
-            sha3_uncles.append(each.sha3_uncles)
-            logs_bloom.append(each.logs_bloom)
-            transactions_root.append(each.transactions_root)
-            state_root.append(each.state_root)
-            receipts_root.append(each.receipts_root)
-            miner.append(each.miner)
-            difficulty.append(str(each.difficulty))             #cast as str
-            total_difficulty.append(str(each.total_difficulty)) #cast as str
-            size.append(each.size)
-            extra_data.append(each.extra_data)
-            gas_limit.append(each.gas_limit)
-            gas_used.append(each.gas_used)
-            timestamp.append(each.timestamp)
-            transaction_count.append(each.transaction_count)
-
-        # convert list to Arrow array object
-        import pyarrow as pa
-        arr_number            = pa.array(number,            type="int64")
-        arr_hash              = pa.array(hash,              type="str")
-        arr_parent_hash       = pa.array(parent_hash,       type="str")
-        arr_nonce             = pa.array(nonce,             type="str")
-        arr_sha3_uncles       = pa.array(sha3_uncles,       type="str")
-        arr_logs_bloom        = pa.array(logs_bloom,        type="str")
-        arr_transactions_root = pa.array(transactions_root, type="str")
-        arr_state_root        = pa.array(state_root,        type="str")
-        arr_receipts_root     = pa.array(receipts_root,     type="str")
-        arr_miner             = pa.array(miner,             type="str")
-        arr_difficulty        = pa.array(difficulty,        type="str")
-        arr_total_difficulty  = pa.array(total_difficulty,  type="str")
-        arr_size              = pa.array(size,              type="int32")
-        arr_extra_data        = pa.array(extra_data,        type="str")
-        arr_gas_limit         = pa.array(gas_limit,         type="int64")
-        arr_gas_used          = pa.array(gas_used,          type="int64")
-        arr_timestamp         = pa.array(timestamp,         type="int64")
-        arr_transaction_count = pa.array(transaction_count, type="int16")
-
-        # create Arrow table object
-        table = pa.Table.from_arrays(
-            arrays = [arr_number,arr_hash,arr_parent_hash,arr_nonce,
-                      arr_sha3_uncles,arr_logs_bloom,arr_transactions_root,
-                      arr_state_root,arr_receipts_root,arr_miner,arr_difficulty,
-                      arr_total_difficulty,arr_size,arr_extra_data,arr_gas_limit,
-                      arr_gas_used,arr_timestamp,arr_transaction_count],
-            names = ['number','hash','parent_hash','nonce','sha3_uncles',
-                     'logs_bloom','transactions_root','state_root',
-                     'receipts_root','miner','difficulty','total_difficulty',
-                     'size','extra_data','gas_limit','gas_used','timestamp',
-                     'transaction_count']
-        )
-
-        # save as parquet
-        pa.parquet.write_table()
-
-        return
+            if (self.orientation == "row"):
+                for block in blocks:
+                    for tx in block.transactions:
+                        self.item_exporter.export_item(self.transaction_mapper.transaction_to_dict(tx))
+            elif (self.orientation == "column"):
+                pass
 
     def _end(self):
         self.batch_work_executor.shutdown()

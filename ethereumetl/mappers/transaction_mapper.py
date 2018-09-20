@@ -56,3 +56,19 @@ class EthTransactionMapper(object):
             'gas_price': transaction.gas_price,
             'input': transaction.input,
         }
+
+    def transactions_to_dict(self, transactions):
+        return {
+            'type': 'transaction',
+            'hash': [transaction.hash for transaction in transactions],
+            'nonce': [transaction.nonce for transaction in transactions],
+            'block_hash': [transaction.block_hash for transaction in transactions],
+            'block_number': [transaction.block_number for transaction in transactions],
+            'transaction_index': [transaction.transaction_index for transaction in transactions],
+            'from_address': [transaction.from_address for transaction in transactions],
+            'to_address': [transaction.to_address for transaction in transactions],
+            'value': [transaction.value for transaction in transactions],
+            'gas': [transaction.gas for transaction in transactions],
+            'gas_price': [transaction.gas_price for transaction in transactions],
+            'input': [transaction.input for transaction in transactions]
+        }
