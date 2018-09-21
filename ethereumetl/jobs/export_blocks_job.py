@@ -98,7 +98,10 @@ class ExportBlocksJob(BaseJob):
                     for tx in block.transactions:
                         self.item_exporter.export_item(self.transaction_mapper.transaction_to_dict(tx))
             elif (self.orientation == "column"):
-                pass
+                tx = []
+                for block in blocks:
+                    tx += block.transactions
+                self.item_exporter.export_item(self.transaction_mapper.transactions_to_dict(tx))
 
     def _end(self):
         self.batch_work_executor.shutdown()
