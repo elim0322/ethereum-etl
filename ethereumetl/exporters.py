@@ -178,10 +178,10 @@ class ParquetItemExporter(BaseItemExporter):
     def __init__(self, file, **kwargs):
         self._configure(kwargs, dont_fail=True)
         self.file = file
-        self.compression = "gzip"
+        self.compression = 'gzip'
 
     def _get_serialized_fields(self, item):
-        return [field for field in item.keys() if field != "type"]
+        return [field for field in item.keys() if field != 'type']
 
     def export_item(self, item):
         fields = self._get_serialized_fields(item)

@@ -61,10 +61,10 @@ class ExportBlocksJob(BaseJob):
         self.transaction_mapper = EthTransactionMapper()
 
         ext = self.item_exporter.filename_mapping.values()
-        if any(".parquet" in each for each in ext if each is not None):
-            self.orientation = "column"
+        if any('.parquet' in each for each in ext if each is not None):
+            self.orientation = 'column'
         else:
-            self.orientation = "row"
+            self.orientation = 'row'
 
     def _start(self):
         self.item_exporter.open()
@@ -86,18 +86,18 @@ class ExportBlocksJob(BaseJob):
 
     def _export_blocks(self, blocks):
         if self.export_blocks:
-            if (self.orientation == "row"):
+            if (self.orientation == 'row'):
                 for block in blocks:
                     self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
-            elif (self.orientation == "column"):
+            elif (self.orientation == 'column'):
                 self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks))
 
         if self.export_transactions:
-            if (self.orientation == "row"):
+            if (self.orientation == 'row'):
                 for block in blocks:
                     for tx in block.transactions:
                         self.item_exporter.export_item(self.transaction_mapper.transaction_to_dict(tx))
-            elif (self.orientation == "column"):
+            elif (self.orientation == 'column'):
                 tx = []
                 for block in blocks:
                     tx += block.transactions
