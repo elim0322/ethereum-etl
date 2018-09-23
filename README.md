@@ -153,23 +153,23 @@ total_supply                 | numeric     |
 
 You can find column descriptions in [https://github.com/medvedev1088/ethereum-etl-airflow](https://github.com/medvedev1088/ethereum-etl-airflow/tree/master/dags/resources/stages/raw/schemas)
 
-Note: for the `address` type all hex characters are lower-cased. 
+Note: for the `address` type all hex characters are lower-cased.
 `boolean` type can have 2 values: `True` or `False`.
 
 ## LIMITATIONS
 
-- `contracts.csv` and `tokens.csv` files don’t include contracts created by message calls (a.k.a. internal transactions). 
+- `contracts.csv` and `tokens.csv` files don’t include contracts created by message calls (a.k.a. internal transactions).
 We are working on adding support for those.
 - In case the contract is a proxy, which forwards all calls to a delegate, interface detection doesn’t work,
 which means `is_erc20` and `is_erc721` will always be false for proxy contracts.
-- The metadata methods (`symbol`, `name`, `decimals`, `total_supply`) for ERC20 are optional, so around 10% of the 
-contracts are missing this data. Also some contracts (EOS) implement these methods but with wrong return type, 
+- The metadata methods (`symbol`, `name`, `decimals`, `total_supply`) for ERC20 are optional, so around 10% of the
+contracts are missing this data. Also some contracts (EOS) implement these methods but with wrong return type,
 so the metadata columns are missing in this case as well.
 - `token_transfers.value`, `tokens.decimals` and `tokens.total_supply` have type `STRING` in BigQuery tables,
-because numeric types there can't handle 32-byte integers. You should use 
+because numeric types there can't handle 32-byte integers. You should use
 `cast(value as FLOAT64)` (possible loss of precision) or
 `safe_cast(value as NUMERIC)` (possible overflow) to convert to numbers.
-- The contracts that don't implement `decimals()` function but have the 
+- The contracts that don't implement `decimals()` function but have the
 [fallback function](https://solidity.readthedocs.io/en/v0.4.21/contracts.html#fallback-function) that returns a `boolean`
 will have `0` or `1` in the `decimals` column in the CSVs.
 
@@ -187,8 +187,8 @@ export the data ~40 times faster, you will need to set up a local Ethereum node:
 
 1. Start geth.
 Make sure it downloaded the blocks that you need by executing `eth.syncing` in the JS console.
-You can export blocks below `currentBlock`, 
-there is no need to wait until the full sync as the state is not needed (unless you also need contracts bytecode 
+You can export blocks below `currentBlock`,
+there is no need to wait until the full sync as the state is not needed (unless you also need contracts bytecode
 and token details; for those you need to wait until the full sync).
 
 1. Clone Ethereum ETL and install the dependencies:
@@ -220,7 +220,7 @@ and token details; for those you need to wait until the full sync).
     ```
 
 Should work with geth and parity, on Linux, Mac, Windows.
-If you use Parity you should disable warp mode with `--no-warp` option because warp mode 
+If you use Parity you should disable warp mode with `--no-warp` option because warp mode
 does not place all of the block or receipt data into the database https://wiki.parity.io/Getting-Synced
 Tested with Python 3.6, geth 1.8.7, Ubuntu 16.04.4
 
@@ -286,7 +286,7 @@ You can tune `--batch-size`, `--max-workers` for performance.
 
 ##### export_token_transfers.py
 
-The API used in this command is not supported by Infura, so you will need a local node. 
+The API used in this command is not supported by Infura, so you will need a local node.
 If you want to use Infura for exporting ERC20 transfers refer to [extract_token_transfers.py](#extract_token_transferspy)
 
 ```bash
@@ -305,11 +305,11 @@ You can tune `--batch-size`, `--max-workers` for performance.
 
 ##### export_receipts_and_logs.py
 
-First extract transaction hashes from `transactions.csv` 
+First extract transaction hashes from `transactions.csv`
 (Exported with [export_blocks_and_transactions.py](#export_blocks_and_transactionspy)):
 
 ```bash
-> python extract_csv_column.py --input transactions.csv --column transaction_hash --output transaction_hashes.txt
+> python extract_csv_column.py --input transactions.csv --column hash --output transaction_hashes.txt
 ```
 
 Then export receipts and logs:
@@ -358,7 +358,7 @@ You can tune `--batch-size`, `--max-workers` for performance.
 
 ##### export_tokens.py
 
-First extract token addresses from `contracts.json` 
+First extract token addresses from `contracts.json`
 (Exported with [export_contracts.py](#export_contractspy)):
 
 ```bash
@@ -442,4 +442,3 @@ Refer to https://github.com/medvedev1088/ethereum-etl-airflow for the instructio
 
 You can query the data that's updated daily in the public BigQuery dataset
 https://medium.com/@medvedev1088/ethereum-blockchain-on-google-bigquery-283fb300f579
-
