@@ -33,3 +33,15 @@ class EthTokenTransferMapper(object):
             'log_index': token_transfer.log_index,
             'block_number': token_transfer.block_number,
         }
+
+    def token_transfers_to_dict(self, token_transfers):
+        return {
+            'type': 'token_transfer',
+            'token_address': [token_transfer.token_address for token_transfer in token_transfers],
+            'from_address': [token_transfer.from_address for token_transfer in token_transfers],
+            'to_address': [token_transfer.to_address for token_transfer in token_transfers],
+            'value': [str(token_transfer.value) for token_transfer in token_transfers],
+            'transaction_hash': [token_transfer.transaction_hash for token_transfer in token_transfers],
+            'log_index': [token_transfer.log_index for token_transfer in token_transfers],
+            'block_number': [token_transfer.block_number for token_transfer in token_transfers]
+        }

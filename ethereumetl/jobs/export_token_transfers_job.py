@@ -52,6 +52,11 @@ class ExportTokenTransfersJob(BaseJob):
         self.token_transfer_mapper = EthTokenTransferMapper()
         self.token_transfer_extractor = EthTokenTransferExtractor()
 
+        if (self.item_exporter.filename_mapping['token_transfer'].endswith('.parquet')):
+            self.orientation = 'column'
+        else:
+            self.orientation = 'row'
+
     def _start(self):
         self.item_exporter.open()
 
@@ -76,11 +81,21 @@ class ExportTokenTransfersJob(BaseJob):
 
         event_filter = self.web3.eth.filter(filter_params)
         events = event_filter.get_all_entries()
+
+        logs = []
+        token_transfers = []
         for event in events:
             log = self.receipt_log_mapper.web3_dict_to_receipt_log(event)
             token_transfer = self.token_transfer_extractor.extract_transfer_from_log(log)
             if token_transfer is not None:
-                self.item_exporter.export_item(self.token_transfer_mapper.token_transfer_to_dict(token_transfer))
+                if self.orientation == 'row':
+                    self.item_exporter.export_item(self.token_transfer_mapper.token_transfer_to_dict(token_transfer))
+                elif self.orientation == 'column':
+                    logs.append(log)
+                    token_transfers.append(token_transfer)
+
+        if token_transfer is not None and self.orientation == 'column':
+            self.item_exporter.export_item(self.token_transfer_mapper.token_transfers_to_dict(token_transfers))
 
         self.web3.eth.uninstallFilter(event_filter.filter_id)
 
