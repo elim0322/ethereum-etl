@@ -22,8 +22,11 @@
 
 
 import argparse
+import csv
 import json
+import pyarrow.parquet as pq
 
+from ethereumetl.csv_utils import set_max_field_size_limit
 from ethereumetl.file_utils import smart_open
 
 parser = argparse.ArgumentParser(description='Extracts a single field from a given file.')
@@ -33,8 +36,21 @@ parser.add_argument('-f', '--field', required=True, type=str, help='The field na
 
 args = parser.parse_args()
 
-# TODO: Add support for CSV
-with smart_open(args.input, 'r') as input_file, smart_open(args.output, 'w') as output_file:
-    for line in input_file:
-        item = json.loads(line)
-        output_file.write(item[args.field] + '\n')
+if args.input.endswith('.csv'):
+    set_max_field_size_limit()
+    with smart_open(args.input, 'r') as input_file, smart_open(args.output, 'w') as output_file:
+        reader = csv.DictReader(input_file)
+        for row in reader:
+            output_file.write(row[args.field] + '\n')
+
+elif args.input.endswith('.json'):
+    with smart_open(args.input, 'r') as input_file, smart_open(args.output, 'w') as output_file:
+        for line in input_file:
+            item = json.loads(line)
+            output_file.write(item[args.field] + '\n')
+
+elif args.input.endswith('.parquet'):
+    with smart_open(args.output, 'w') as output_file:
+        lst = pq.read_table(args.input).column(args.field).to_pandas().tolist()
+        for each in lst:
+            output_file.write(each + '\n')
