@@ -22,6 +22,7 @@
 
 
 import json
+import pyarrow.parquet as pq
 
 from ethereumetl.executors.batch_work_executor import BatchWorkExecutor
 from ethereumetl.jobs.base_job import BaseJob
@@ -65,11 +66,19 @@ class ExportBlocksJob(BaseJob):
             self.orientation = 'column'
         else:
             self.orientation = 'row'
+        self.writer = None
 
     def _start(self):
         self.item_exporter.open()
 
     def _export(self):
+        if self.orientation == 'column':
+            if self.export_blocks and not self.writer:
+                self.writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
+                                               schema=self.item_exporter.exporter_mapping['block']._get_schema())
+            if self.export_transactions:
+                pass
+
         self.batch_work_executor.execute(
             range(self.start_block, self.end_block + 1),
             self._export_batch,
@@ -86,18 +95,18 @@ class ExportBlocksJob(BaseJob):
 
     def _export_blocks(self, blocks):
         if self.export_blocks:
-            if (self.orientation == 'row'):
+            if self.orientation == 'row':
                 for block in blocks:
                     self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
-            elif (self.orientation == 'column'):
-                self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks))
+            elif self.orientation == 'column':
+                self.writer = self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks), writer=self.writer)
 
         if self.export_transactions:
-            if (self.orientation == 'row'):
+            if self.orientation == 'row':
                 for block in blocks:
                     for tx in block.transactions:
                         self.item_exporter.export_item(self.transaction_mapper.transaction_to_dict(tx))
-            elif (self.orientation == 'column'):
+            elif self.orientation == 'column':
                 tx = []
                 for block in blocks:
                     tx += block.transactions

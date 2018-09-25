@@ -178,12 +178,44 @@ class ParquetItemExporter(BaseItemExporter):
     def __init__(self, file, **kwargs):
         self._configure(kwargs, dont_fail=True)
         self.file = file
-        self.compression = 'gzip'
+        self.schema = self._get_schema()
+        # self.parquet_writer = pq.ParquetWriter(where=self.file, schema=self.schema, compression='gzip')
+
+    def _get_field_types(self):
+        return [
+            pa.field('number', pa.int64()) if 'number' in self.fields_to_export else None,
+            pa.field('hash', pa.string()) if 'hash' in self.fields_to_export else None,
+            pa.field('parent_hash', pa.string()) if 'parent_hash' in self.fields_to_export else None,
+            pa.field('nonce', pa.string()) if 'nonce' in self.fields_to_export else None,
+            pa.field('sha3_uncles', pa.string()) if 'sha3_uncles' in self.fields_to_export else None,
+            pa.field('logs_bloom', pa.string()) if 'logs_bloom' in self.fields_to_export else None,
+            pa.field('transactions_root', pa.string()) if 'transactions_root' in self.fields_to_export else None,
+            pa.field('state_root', pa.string()) if 'state_root' in self.fields_to_export else None,
+            pa.field('receipts_root', pa.string()) if 'receipts_root' in self.fields_to_export else None,
+            pa.field('miner', pa.string()) if 'miner' in self.fields_to_export else None,
+            pa.field('difficulty', pa.string()) if 'difficulty' in self.fields_to_export else None,
+            pa.field('total_difficulty', pa.string()) if 'total_difficulty' in self.fields_to_export else None,
+            pa.field('size', pa.int64()) if 'size' in self.fields_to_export else None,
+            pa.field('extra_data', pa.string()) if 'extra_data' in self.fields_to_export else None,
+            pa.field('gas_limit', pa.int64()) if 'gas_limit' in self.fields_to_export else None,
+            pa.field('gas_used', pa.int64()) if 'gas_used' in self.fields_to_export else None,
+            pa.field('timestamp', pa.int64()) if 'timestamp' in self.fields_to_export else None,
+            pa.field('transaction_count', pa.int64()) if 'transaction_count' in self.fields_to_export else None
+        ]
+
+    def _get_schema(self):
+        return pa.schema(self._get_field_types())
 
     def _get_serialized_fields(self, item):
         return [field for field in item.keys() if field != 'type']
 
-    def export_item(self, item):
+    # def _append_to_parquet(self, table):
+    #     writer = pq.ParquetWriter(self.file, self.schema)
+    #     writer.write_table(table)
+    #     return writer
+
+    def export_item(self, item, writer=None):
+
         fields = self._get_serialized_fields(item)
 
         # create Arrow arrays (from list)
@@ -192,10 +224,17 @@ class ParquetItemExporter(BaseItemExporter):
             lst.append(pa.array(item[field]))
 
         # create Arrow arrays
-        table = pa.Table.from_arrays(arrays=lst, names=fields)
+        table = pa.Table.from_arrays(arrays=lst, names=fields)#, schema=self.schema)
+
 
         # write table as parquet
-        pq.write_table(table=table, where=self.file, compression=self.compression)
+        writer.write_table(table)
+        return writer
+        # writer = self._append_to_parquet(table)
+
+        # if writer:
+        #     writer.close()
+        # self.parquet_writer.write_table(table=table)
 
 
 def to_native_str(text, encoding=None, errors='strict'):

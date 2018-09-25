@@ -43,7 +43,7 @@ class ExportReceiptsJob(BaseJob):
             export_receipts=True,
             export_logs=True):
         self.batch_web3_provider = batch_web3_provider
-        self.transaction_hashes_iterable = transaction_hashes_iterable
+        self.transaction_hashes_iterable = transaction_hashes_iterable; import pdb; pdb.set_trace()
 
         self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers)
         self.item_exporter = item_exporter
@@ -56,6 +56,12 @@ class ExportReceiptsJob(BaseJob):
         self.receipt_mapper = EthReceiptMapper()
         self.receipt_log_mapper = EthReceiptLogMapper()
 
+        ext = self.item_exporter.filename_mapping.values()
+        if any('.parquet' in each for each in ext if each is not None):
+            self.orientation = 'column'
+        else:
+            self.orientation = 'row'
+
     def _start(self):
         self.item_exporter.open()
 
@@ -67,6 +73,11 @@ class ExportReceiptsJob(BaseJob):
         response = self.batch_web3_provider.make_request(json.dumps(receipts_rpc))
         results = rpc_response_batch_to_results(response)
         receipts = [self.receipt_mapper.json_dict_to_receipt(result) for result in results]
+
+        print(len(receipts))
+
+        # receipts = [x for x in receipt for receipt in receipts]
+
         for receipt in receipts:
             self._export_receipt(receipt)
 
@@ -76,6 +87,10 @@ class ExportReceiptsJob(BaseJob):
         if self.export_logs:
             for log in receipt.logs:
                 self.item_exporter.export_item(self.receipt_log_mapper.receipt_log_to_dict(log))
+
+    def _test(self, receipts):
+        if self.export_receipts:
+            self.item_exporter.export_item(self.receipt_mapper.receipts_to_dict(receipts))
 
     def _end(self):
         self.batch_work_executor.shutdown()
