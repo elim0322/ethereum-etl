@@ -190,10 +190,11 @@ class ParquetItemExporter(BaseItemExporter):
         # create Arrow arrays (from list)
         lst = []
         for field in fields:
+            # if field == 'contract_address': import pdb; pdb.set_trace()
             lst.append(pa.array(item[field]))
 
         # create Arrow arrays
-        table = pa.Table.from_arrays(arrays=lst, names=fields)#, schema=self.schema)
+        table = pa.Table.from_arrays(arrays=lst, names=fields)
 
         # write table as parquet
         writer.write_table(table=table)

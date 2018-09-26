@@ -22,6 +22,7 @@
 
 
 import json
+import pyarrow.parquet as pq
 
 from ethereumetl.jobs.base_job import BaseJob
 from ethereumetl.executors.batch_work_executor import BatchWorkExecutor
@@ -43,7 +44,7 @@ class ExportReceiptsJob(BaseJob):
             export_receipts=True,
             export_logs=True):
         self.batch_web3_provider = batch_web3_provider
-        self.transaction_hashes_iterable = transaction_hashes_iterable; import pdb; pdb.set_trace()
+        self.transaction_hashes_iterable = transaction_hashes_iterable
 
         self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers)
         self.item_exporter = item_exporter
@@ -66,24 +67,29 @@ class ExportReceiptsJob(BaseJob):
         self.item_exporter.open()
 
     def _export(self):
-        self.batch_work_executor.execute(self.transaction_hashes_iterable, self._export_receipts)
+        if self.orientation == 'column':
+            if self.export_receipts:
+                self.receipt_writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['receipt'],
+                                                       schema=self.receipt_mapper._schema)
+            if self.export_logs:
+                pass
 
+        self.batch_work_executor.execute(self.transaction_hashes_iterable, self._export_receipts)
     def _export_receipts(self, transaction_hashes):
         receipts_rpc = list(generate_get_receipt_json_rpc(transaction_hashes))
         response = self.batch_web3_provider.make_request(json.dumps(receipts_rpc))
         results = rpc_response_batch_to_results(response)
         receipts = [self.receipt_mapper.json_dict_to_receipt(result) for result in results]
 
-        print(len(receipts))
+        self._export_receipt(receipts)
 
-        # receipts = [x for x in receipt for receipt in receipts]
-
-        for receipt in receipts:
-            self._export_receipt(receipt)
-
-    def _export_receipt(self, receipt):
+    def _export_receipt(self, receipts):
         if self.export_receipts:
-            self.item_exporter.export_item(self.receipt_mapper.receipt_to_dict(receipt))
+            if self.orientation == 'row':
+                for receipt in receipts:
+                    self.item_exporter.export_item(self.receipt_mapper.receipt_to_dict(receipt))
+            elif self.orientation == 'column':
+                self.item_exporter.export_item(self.receipt_mapper.receipts_to_dict(receipts), writer=self.receipt_writer)
         if self.export_logs:
             for log in receipt.logs:
                 self.item_exporter.export_item(self.receipt_log_mapper.receipt_log_to_dict(log))

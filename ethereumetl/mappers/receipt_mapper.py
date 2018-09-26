@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pyarrow as pa
 
 from ethereumetl.domain.receipt import EthReceipt
 from ethereumetl.mappers.receipt_log_mapper import EthReceiptLogMapper
@@ -27,6 +28,18 @@ from ethereumetl.utils import hex_to_dec, to_normalized_address
 
 
 class EthReceiptMapper(object):
+    _fields = [pa.field('transaction_hash', pa.string()),
+               pa.field('transaction_index', pa.int64()),
+               pa.field('block_hash', pa.string()),
+               pa.field('block_number', pa.int64()),
+               pa.field('cumulative_gas_used', pa.int64()),
+               pa.field('gas_used', pa.int64()),
+               pa.field('contract_address', pa.string()),
+               pa.field('root', pa.string()),
+               pa.field('status', pa.int64())]
+
+    _schema = pa.schema(_fields)
+
     def __init__(self, receipt_log_mapper=None):
         if receipt_log_mapper is None:
             self.receipt_log_mapper = EthReceiptLogMapper()
@@ -78,7 +91,7 @@ class EthReceiptMapper(object):
             'block_number': [receipt.block_number for receipt in receipts],
             'cumulative_gas_used': [receipt.cumulative_gas_used for receipt in receipts],
             'gas_used': [receipt.gas_used for receipt in receipts],
-            'contract_address': [receipt.contract_address for receipt in receipts],
-            'root': [receipt.root for receipt in receipts],
+            'contract_address': [str(receipt.contract_address) for receipt in receipts],
+            'root': [str(receipt.root) for receipt in receipts],
             'status': [receipt.status for receipt in receipts]
         }
