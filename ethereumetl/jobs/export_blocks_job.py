@@ -79,10 +79,13 @@ class ExportBlocksJob(BaseJob):
             )
         elif self.orientation == 'column':
             block_list = list(range(self.start_block, self.end_block + 1))
-            self.writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
-                                           schema=self.item_exporter.exporter_mapping['block']._get_schema())
+            if self.export_blocks:
+                self.block_writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
+                                                     schema=self.item_exporter.exporter_mapping['block']._get_schema())
+            if self.export_transactions:
+                self.transaction_writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['transaction'],
+                                                           schema=self.item_exporter.exporter_mapping['transaction']._get_schema())
             while len(block_list) > 0:
-
                 self._export_batch(block_list[0:self.batch_size])
                 del block_list[:self.batch_size]
 
@@ -100,7 +103,7 @@ class ExportBlocksJob(BaseJob):
                 for block in blocks:
                     self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
             elif self.orientation == 'column':
-                self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks), writer=self.writer)
+                self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks), writer=self.block_writer)
 
         if self.export_transactions:
             if self.orientation == 'row':
@@ -111,7 +114,7 @@ class ExportBlocksJob(BaseJob):
                 tx = []
                 for block in blocks:
                     tx += block.transactions
-                self.item_exporter.export_item(self.transaction_mapper.transactions_to_dict(tx))
+                self.item_exporter.export_item(self.transaction_mapper.transactions_to_dict(tx), writer=self.transaction_writer)
 
     def _end(self):
         self.batch_work_executor.shutdown()
