@@ -178,34 +178,7 @@ class ParquetItemExporter(BaseItemExporter):
     def __init__(self, file, **kwargs):
         self._configure(kwargs, dont_fail=True)
         self.file = file
-        self.schema = self._get_schema()
         self.compression = 'gzip'
-        # self.parquet_writer = pq.ParquetWriter(where=self.file, schema=self.schema, compression='gzip')
-
-    def _get_field_types(self):
-        return [
-            pa.field('number', pa.int64()) if 'number' in self.fields_to_export else None,
-            pa.field('hash', pa.string()) if 'hash' in self.fields_to_export else None,
-            pa.field('parent_hash', pa.string()) if 'parent_hash' in self.fields_to_export else None,
-            pa.field('nonce', pa.string()) if 'nonce' in self.fields_to_export else None,
-            pa.field('sha3_uncles', pa.string()) if 'sha3_uncles' in self.fields_to_export else None,
-            pa.field('logs_bloom', pa.string()) if 'logs_bloom' in self.fields_to_export else None,
-            pa.field('transactions_root', pa.string()) if 'transactions_root' in self.fields_to_export else None,
-            pa.field('state_root', pa.string()) if 'state_root' in self.fields_to_export else None,
-            pa.field('receipts_root', pa.string()) if 'receipts_root' in self.fields_to_export else None,
-            pa.field('miner', pa.string()) if 'miner' in self.fields_to_export else None,
-            pa.field('difficulty', pa.string()) if 'difficulty' in self.fields_to_export else None,
-            pa.field('total_difficulty', pa.string()) if 'total_difficulty' in self.fields_to_export else None,
-            pa.field('size', pa.int64()) if 'size' in self.fields_to_export else None,
-            pa.field('extra_data', pa.string()) if 'extra_data' in self.fields_to_export else None,
-            pa.field('gas_limit', pa.int64()) if 'gas_limit' in self.fields_to_export else None,
-            pa.field('gas_used', pa.int64()) if 'gas_used' in self.fields_to_export else None,
-            pa.field('timestamp', pa.int64()) if 'timestamp' in self.fields_to_export else None,
-            pa.field('transaction_count', pa.int64()) if 'transaction_count' in self.fields_to_export else None
-        ]
-
-    def _get_schema(self):
-        return pa.schema(self._get_field_types())
 
     def _get_serialized_fields(self, item):
         return [field for field in item.keys() if field != 'type']
@@ -224,7 +197,6 @@ class ParquetItemExporter(BaseItemExporter):
 
         # write table as parquet
         writer.write_table(table=table)
-
         return writer
 
 

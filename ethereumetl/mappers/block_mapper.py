@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pyarrow as pa
 
 from ethereumetl.domain.block import EthBlock
 from ethereumetl.mappers.transaction_mapper import EthTransactionMapper
@@ -27,6 +28,27 @@ from ethereumetl.utils import hex_to_dec, to_normalized_address
 
 
 class EthBlockMapper(object):
+    _fields = [pa.field('number', pa.int64()),
+               pa.field('hash', pa.string()),
+               pa.field('parent_hash', pa.string()),
+               pa.field('nonce', pa.string()),
+               pa.field('sha3_uncles', pa.string()),
+               pa.field('logs_bloom', pa.string()),
+               pa.field('transactions_root', pa.string()),
+               pa.field('state_root', pa.string()),
+               pa.field('receipts_root', pa.string()),
+               pa.field('miner', pa.string()),
+               pa.field('difficulty', pa.string()),
+               pa.field('total_difficulty', pa.string()),
+               pa.field('size', pa.int64()),
+               pa.field('extra_data', pa.string()),
+               pa.field('gas_limit', pa.int64()),
+               pa.field('gas_used', pa.int64()),
+               pa.field('timestamp', pa.int64()),
+               pa.field('transaction_count', pa.int64())]
+
+    _schema = pa.schema(_fields)
+
     def __init__(self, transaction_mapper=None):
         if transaction_mapper is None:
             self.transaction_mapper = EthTransactionMapper()

@@ -81,10 +81,11 @@ class ExportBlocksJob(BaseJob):
             block_list = list(range(self.start_block, self.end_block + 1))
             if self.export_blocks:
                 self.block_writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
-                                                     schema=self.item_exporter.exporter_mapping['block']._get_schema())
+                                                     schema=self.block_mapper._schema)
             if self.export_transactions:
                 self.transaction_writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['transaction'],
-                                                           schema=self.item_exporter.exporter_mapping['transaction']._get_schema())
+                                                           schema=self.transaction_mapper._schema)
+
             while len(block_list) > 0:
                 self._export_batch(block_list[0:self.batch_size])
                 del block_list[:self.batch_size]

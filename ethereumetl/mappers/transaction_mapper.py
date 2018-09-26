@@ -20,12 +20,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pyarrow as pa
 
 from ethereumetl.domain.transaction import EthTransaction
 from ethereumetl.utils import hex_to_dec, to_normalized_address
 
 
 class EthTransactionMapper(object):
+    _fields = [pa.field('hash', pa.string()),
+               pa.field('nonce', pa.int64()),
+               pa.field('block_hash', pa.string()),
+               pa.field('block_number', pa.int64()),
+               pa.field('transaction_index', pa.int64()),
+               pa.field('from_address', pa.string()),
+               pa.field('to_address', pa.string()),
+               pa.field('value', pa.string()),
+               pa.field('gas', pa.int64()),
+               pa.field('gas_price', pa.int64()),
+               pa.field('input', pa.string())]
+
+    _schema = pa.schema(_fields)
+
     def json_dict_to_transaction(self, json_dict):
         transaction = EthTransaction()
         transaction.hash = json_dict.get('hash', None)
