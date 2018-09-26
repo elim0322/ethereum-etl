@@ -56,7 +56,7 @@ class BaseItemExporter(object):
         if not dont_fail and options:
             raise TypeError("Unexpected options: %s" % ', '.join(options.keys()))
 
-    def export_item(self, item):
+    def export_item(self, item, writer=None):
         raise NotImplementedError
 
     def serialize_field(self, field, name, value):
@@ -126,7 +126,7 @@ class CsvItemExporter(BaseItemExporter):
                 pass
         return value
 
-    def export_item(self, item):
+    def export_item(self, item, writer=None):
         # Double-checked locking (safe in Python because of GIL) https://en.wikipedia.org/wiki/Double-checked_locking
         if self._headers_not_written:
             with self._write_headers_lock:
@@ -167,7 +167,7 @@ class JsonLinesItemExporter(BaseItemExporter):
         kwargs.setdefault('ensure_ascii', not self.encoding)
         self.encoder = JSONEncoder(**kwargs)
 
-    def export_item(self, item):
+    def export_item(self, item, writer=None):
         itemdict = dict(self._get_serialized_fields(item))
         data = self.encoder.encode(itemdict) + '\n'
         self.file.write(to_bytes(data, self.encoding))
@@ -179,6 +179,7 @@ class ParquetItemExporter(BaseItemExporter):
         self._configure(kwargs, dont_fail=True)
         self.file = file
         self.schema = self._get_schema()
+        self.compression = 'gzip'
         # self.parquet_writer = pq.ParquetWriter(where=self.file, schema=self.schema, compression='gzip')
 
     def _get_field_types(self):
@@ -209,11 +210,6 @@ class ParquetItemExporter(BaseItemExporter):
     def _get_serialized_fields(self, item):
         return [field for field in item.keys() if field != 'type']
 
-    # def _append_to_parquet(self, table):
-    #     writer = pq.ParquetWriter(self.file, self.schema)
-    #     writer.write_table(table)
-    #     return writer
-
     def export_item(self, item, writer=None):
 
         fields = self._get_serialized_fields(item)
@@ -226,15 +222,10 @@ class ParquetItemExporter(BaseItemExporter):
         # create Arrow arrays
         table = pa.Table.from_arrays(arrays=lst, names=fields)#, schema=self.schema)
 
-
         # write table as parquet
-        writer.write_table(table)
-        return writer
-        # writer = self._append_to_parquet(table)
+        writer.write_table(table=table)
 
-        # if writer:
-        #     writer.close()
-        # self.parquet_writer.write_table(table=table)
+        return writer
 
 
 def to_native_str(text, encoding=None, errors='strict'):

@@ -49,7 +49,6 @@ class ExportBlocksJob(BaseJob):
         self.end_block = end_block
 
         self.batch_web3_provider = batch_web3_provider
-
         self.batch_work_executor = BatchWorkExecutor(batch_size, max_workers)
         self.item_exporter = item_exporter
 
@@ -66,24 +65,26 @@ class ExportBlocksJob(BaseJob):
             self.orientation = 'column'
         else:
             self.orientation = 'row'
-        self.writer = None
+        self.batch_size = batch_size
 
     def _start(self):
         self.item_exporter.open()
 
     def _export(self):
-        if self.orientation == 'column':
-            if self.export_blocks and not self.writer:
-                self.writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
-                                               schema=self.item_exporter.exporter_mapping['block']._get_schema())
-            if self.export_transactions:
-                pass
+        if self.orientation == 'row':
+            self.batch_work_executor.execute(
+                range(self.start_block, self.end_block + 1),
+                self._export_batch,
+                total_items=self.end_block - self.start_block + 1
+            )
+        elif self.orientation == 'column':
+            block_list = list(range(self.start_block, self.end_block + 1))
+            self.writer = pq.ParquetWriter(where=self.item_exporter.filename_mapping['block'],
+                                           schema=self.item_exporter.exporter_mapping['block']._get_schema())
+            while len(block_list) > 0:
 
-        self.batch_work_executor.execute(
-            range(self.start_block, self.end_block + 1),
-            self._export_batch,
-            total_items=self.end_block - self.start_block + 1
-        )
+                self._export_batch(block_list[0:self.batch_size])
+                del block_list[:self.batch_size]
 
     def _export_batch(self, block_number_batch):
         blocks_rpc = list(generate_get_block_by_number_json_rpc(block_number_batch, self.export_transactions))
@@ -99,7 +100,7 @@ class ExportBlocksJob(BaseJob):
                 for block in blocks:
                     self.item_exporter.export_item(self.block_mapper.block_to_dict(block))
             elif self.orientation == 'column':
-                self.writer = self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks), writer=self.writer)
+                self.item_exporter.export_item(self.block_mapper.blocks_to_dict(blocks), writer=self.writer)
 
         if self.export_transactions:
             if self.orientation == 'row':
