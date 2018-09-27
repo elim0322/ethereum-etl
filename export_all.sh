@@ -88,10 +88,14 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
     mkdir -p ${transactions_output_dir};
 
     blocks_file=${blocks_output_dir}/blocks_${file_name_suffix}.csv
+    blocks_file_parquet=${blocks_output_dir}/blocks_${file_name_suffix}.parquet
     transactions_file=${transactions_output_dir}/transactions_${file_name_suffix}.csv
+    transactions_file_parquet=${transactions_output_dir}/transactions_${file_name_suffix}.parquet
     log "Exporting blocks ${block_range} to ${blocks_file}"
     log "Exporting transactions from blocks ${block_range} to ${transactions_file}"
     python3 export_blocks_and_transactions.py --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --blocks-output=${blocks_file} --transactions-output=${transactions_file}
+    python3 csv_to_parquet.py --input=${blocks_file} --output=${blocks_file_parquet}
+    python3 csv_to_parquet.py --input=${transactions_file} --output=${transactions_file_parquet}
     quit_if_returned_error
 
     ### token_transfers
@@ -100,15 +104,17 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
     mkdir -p ${token_transfers_output_dir};
 
     token_transfers_file=${token_transfers_output_dir}/token_transfers_${file_name_suffix}.csv
+    token_transfers_file_parquet=${token_transfers_output_dir}/token_transfers_${file_name_suffix}.parquet
     log "Exporting ERC20 transfers from blocks ${block_range} to ${token_transfers_file}"
     python3 export_token_transfers.py --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --output=${token_transfers_file}
+    python3 csv_to_parquet.py --input=${token_transfers_file} --output=${token_transfers_file_parquet}
     quit_if_returned_error
 
     ### receipts_and_logs
 
     transaction_hashes_output_dir=${output_dir}/transaction_hashes${partition_dir}
     mkdir -p ${transaction_hashes_output_dir};
-    
+
     transaction_hashes_file=${transaction_hashes_output_dir}/transaction_hashes_${file_name_suffix}.csv
     log "Extracting hash column from transaction file ${transactions_file}"
     python3 extract_csv_column.py --input ${transactions_file} --output ${transaction_hashes_file} --column "hash"
@@ -121,16 +127,20 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
     mkdir -p ${logs_output_dir};
 
     receipts_file=${receipts_output_dir}/receipts_${file_name_suffix}.csv
+    receipts_file_parquet=${receipts_output_dir}/receipts_${file_name_suffix}.parquet
     logs_file=${logs_output_dir}/logs_${file_name_suffix}.csv
+    logs_file_parquet=${logs_output_dir}/logs_${file_name_suffix}.parquet
     log "Exporting receipts and logs from blocks ${block_range} to ${receipts_file} and ${logs_file}"
     python3 export_receipts_and_logs.py --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}"  --receipts-output=${receipts_file} --logs-output=${logs_file}
+    python3 csv_to_parquet.py --input=${receipts_file} --output=${receipts_file_parquet}
+    python3 csv_to_parquet.py --input=${logs_file} --output=${logs_file_parquet}
     quit_if_returned_error
 
     ### contracts
 
     contract_addresses_output_dir=${output_dir}/contract_addresses${partition_dir}
     mkdir -p ${contract_addresses_output_dir}
-    
+
     contract_addresses_file=${contract_addresses_output_dir}/contract_addresses_${file_name_suffix}.csv
     log "Extracting contract_address from receipt file ${receipts_file}"
     python3 extract_csv_column.py --input ${receipts_file} --column contract_address --output ${contract_addresses_file}
@@ -138,28 +148,32 @@ for (( batch_start_block=$start_block; batch_start_block <= $end_block; batch_st
 
     contracts_output_dir=${output_dir}/contracts${partition_dir}
     mkdir -p ${contracts_output_dir};
-    
+
     contracts_file=${contracts_output_dir}/contracts_${file_name_suffix}.csv
+    contracts_file_parquet=${contracts_output_dir}/contracts_${file_name_suffix}.parquet
     log "Exporting contracts from blocks ${block_range} to ${contracts_file}"
     python3 export_contracts.py --contract-addresses ${contract_addresses_file} --provider-uri="${provider_uri}" --output=${contracts_file}
+    python3 csv_to_parquet.py --input=${contracts_file} --output=${contracts_file_parquet}
     quit_if_returned_error
 
     ### tokens
 
     token_addresses_output_dir=${output_dir}/token_addresses${partition_dir}
     mkdir -p ${token_addresses_output_dir}
-    
+
     token_addresses_file=${token_addresses_output_dir}/token_addresses_${file_name_suffix}
     log "Extracting token_address from token_transfers file ${token_transfers_file}"
     python3 extract_csv_column.py -i ${token_transfers_file} -c token_address -o - | sort | uniq > ${token_addresses_file}
     quit_if_returned_error
-    
+
     tokens_output_dir=${output_dir}/tokens${partition_dir}
     mkdir -p ${tokens_output_dir}
-    
+
     tokens_file=${tokens_output_dir}/tokens_${file_name_suffix}.csv
+    tokens_file_parquet=${tokens_output_dir}/tokens_${file_name_suffix}.parquet
     log "Exporting tokens from blocks ${block_range} to ${tokens_file}"
     python3 export_tokens.py --token-addresses ${token_addresses_file} --provider-uri="${provider_uri}" --output ${tokens_file}
+    python3 csv_to_parquet.py --input=${tokens_file} --output=${tokens_file_parquet}
     quit_if_returned_error
 
     end_time=$(date +%s)
