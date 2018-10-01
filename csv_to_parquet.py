@@ -12,7 +12,8 @@ parser.add_argument("-o", "--output", type=str, help="Output file")
 args = parser.parse_args()
 
 # define dtype for each file type
-if "blocks_" in args.input:
+# https://github.com/blockchain-etl/ethereum-etl-airflow/tree/master/dags/resources/stages/raw/schemas
+if "blocks" in args.input:
     dtype = {"number": np.int64,
              "hash": np.str,
              "parent_hash": np.str,
@@ -43,7 +44,7 @@ elif "transactions" in args.input:
              "gas": np.int64,
              "gas_price": np.int64,
              "input": np.str}
-elif "token_transfers_" in args.input:
+elif "token_transfers" in args.input:
     dtype = {"token_address": np.str,
              "from_address": np.str,
              "to_address": np.str,
@@ -53,7 +54,7 @@ elif "token_transfers_" in args.input:
              "block_number": np.int64}
 # elif "transaction_hashes_" in args.input:
 #     dtype = {}
-elif "receipts_" in args.input:
+elif "receipts" in args.input:
     dtype = {"transaction_hash": np.str,
              "transaction_index": np.int64,
              "block_hash": np.str,
@@ -63,7 +64,7 @@ elif "receipts_" in args.input:
              "contract_address": np.str,
              "root": np.str,
              "status": np.int64}
-elif "logs_" in args.input:
+elif "logs" in args.input:
     dtype = {"log_index": np.int64,
              "transaction_hash": np.str,
              "transaction_index": np.int64,
@@ -74,7 +75,7 @@ elif "logs_" in args.input:
              "topics": np.str}
 # elif "contract_addresses"_ in args.input:
 #     dtype = {}
-elif "contracts_" in args.input:
+elif "contracts" in args.input:
     dtype = {"address": np.str,
              "bytecode": np.str,
              "function_sighashes": np.str,
@@ -82,11 +83,11 @@ elif "contracts_" in args.input:
              "is_erc721": np.bool}
 # elif "token_addresses_" in args.input:
 #     dtype = {}
-elif "tokens_" in args.input:
+elif "tokens" in args.input:
     dtype = {"address": np.str,
              "symbol": np.str,
              "name": np.str,
-             "decimals": np.int64,
+             "decimals": np.str,
              "total_supply": np.str}
 
 # try loading csv files with explicitly specified dtype
