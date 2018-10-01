@@ -31,18 +31,18 @@ if "blocks_" in args.input:
              "gas_used": np.int64,
              "timestamp": np.int64,
              "transaction_count": np.int64}
-elif "transactions_" in args.input:
-    dtype = {"hash", np.str,
-             "nonce", np.int64,
-             "block_hash", np.str,
-             "block_number", np.int64,
-             "transaction_index", np.int64,
-             "from_address", np.str,
-             "to_address", np.str,
-             "value", np.str,
-             "gas", np.int64,
-             "gas_price", np.int64,
-             "input", np.str}
+elif "transactions" in args.input:
+    dtype = {"hash": np.str,
+             "nonce": np.int64,
+             "block_hash": np.str,
+             "block_number": np.int64,
+             "transaction_index": np.int64,
+             "from_address": np.str,
+             "to_address": np.str,
+             "value": np.str,
+             "gas": np.int64,
+             "gas_price": np.int64,
+             "input": np.str}
 elif "token_transfers_" in args.input:
     dtype = {"token_address": np.str,
              "from_address": np.str,
@@ -54,15 +54,15 @@ elif "token_transfers_" in args.input:
 # elif "transaction_hashes_" in args.input:
 #     dtype = {}
 elif "receipts_" in args.input:
-    dtype = {"transaction_hash", np.str,
-             "transaction_index", np.int64,
-             "block_hash", np.str,
-             "block_number", np.int64,
-             "cumulative_gas_used", np.int64,
-             "gas_used", np.int64,
-             "contract_address", np.str,
-             "root", np.str,
-             "status", np.int64}
+    dtype = {"transaction_hash": np.str,
+             "transaction_index": np.int64,
+             "block_hash": np.str,
+             "block_number": np.int64,
+             "cumulative_gas_used": np.int64,
+             "gas_used": np.int64,
+             "contract_address": np.str,
+             "root": np.str,
+             "status": np.int64}
 elif "logs_" in args.input:
     dtype = {"log_index": np.int64,
              "transaction_hash": np.str,
