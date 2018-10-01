@@ -95,7 +95,9 @@ while [ 1 ] ; do
     log "Exporting blocks on ${start_date} (${block_range}) to ${blocks_file}"
     log "Exporting transactions from blocks on ${start_date} (${block_range}) to ${transactions_file}"
     python3 export_blocks_and_transactions.py --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --blocks-output=${blocks_file} --transactions-output=${transactions_file}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${blocks_file} --output=${blocks_file_parquet}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${transactions_file} --output=${transactions_file_parquet}
     quit_if_returned_error
 
@@ -108,6 +110,7 @@ while [ 1 ] ; do
     token_transfers_file_parquet=${token_transfers_output_dir}/token_transfers_${file_name_suffix}.parquet
     log "Exporting token transfers from blocks on ${start_date} (${block_range}) to ${token_transfers_file}"
     python3 export_token_transfers.py --start-block=${batch_start_block} --end-block=${batch_end_block} --provider-uri="${provider_uri}" --output=${token_transfers_file}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${token_transfers_file} --output=${token_transfers_file_parquet}
     quit_if_returned_error
 
@@ -133,7 +136,9 @@ while [ 1 ] ; do
     logs_file_parquet=${logs_output_dir}/logs_${file_name_suffix}.parquet
     log "Exporting receipts and logs from blocks on ${start_date} (${block_range}) to ${receipts_file} and ${logs_file}"
     python3 export_receipts_and_logs.py --transaction-hashes ${transaction_hashes_file} --provider-uri="${provider_uri}"  --receipts-output=${receipts_file} --logs-output=${logs_file}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${receipts_file} --output=${receipts_file_parquet}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${logs_file} --output=${logs_file_parquet}
     quit_if_returned_error
 
@@ -154,6 +159,7 @@ while [ 1 ] ; do
     contracts_file_parquet=${contracts_output_dir}/contracts_${file_name_suffix}.parquet
     log "Exporting contracts from blocks on ${start_date} (${block_range}) to ${contracts_file}"
     python3 export_contracts.py --contract-addresses ${contract_addresses_file} --provider-uri="${provider_uri}" --output=${contracts_file}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${contracts_file} --output=${contracts_file_parquet}
     quit_if_returned_error
 
@@ -174,6 +180,7 @@ while [ 1 ] ; do
     tokens_file_parquet=${tokens_output_dir}/tokens_${file_name_suffix}.parquet
     log "Exporting tokens from blocks on ${start_date} (${block_range}) to ${tokens_file}"
     python3 export_tokens.py --token-addresses ${token_addresses_file} --provider-uri="${provider_uri}" --output ${tokens_file}
+    quit_if_returned_error
     python3 csv_to_parquet.py --input=${tokens_file} --output=${tokens_file_parquet}
     quit_if_returned_error
 
