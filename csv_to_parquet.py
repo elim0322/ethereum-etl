@@ -63,7 +63,7 @@ elif "receipts" in args.input:
              "gas_used": np.int64,
              "contract_address": np.str,
              "root": np.str,
-             "status": np.int64}
+             "status": np.str}
 elif "logs" in args.input:
     dtype = {"log_index": np.int64,
              "transaction_hash": np.str,
